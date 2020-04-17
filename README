@@ -1,0 +1,21 @@
+# Dynamic Slot Allocation
+
+## Problematic
+A set of students has to choice between several available sport slots. They can define a list of preferences. The sport slot has a maximum number of participants.
+
+The algorithm must dynamicaly allocate students in sport slots according to their preference. The goal is to allocate all students and minimizing the cost of preference distances.
+
+This is a Knapsack problem.
+
+## Algorithm
+
+This problem can be solved with a SAT solver if the solution exists. But on one hand, we don't know if there is a solution for a given set of data and on the other hand, there is a combinatory issue.
+
+We investigate a naive algorithm based on iterative dynamic allocation.
+
+Proposed algorithm
+------------------
+* For each sport slot, a subset of students are selectionned randomly in order to be allocated to the sport slot.
+- The student selection probability is weighted by the pow of the number of preferences that has been refused to the student in order to favorize student who already has not been selected in previous round
+- The number of available allocations for each sport is progressively increased until saturation in order to relax constraints on other sport slots.
+- The iteration order of sport slot allocation is sorted by inverted popularity of a sport and the invert of the max number of student in order to avoid earlyy deadlocks.
