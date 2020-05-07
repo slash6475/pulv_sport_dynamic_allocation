@@ -1,5 +1,7 @@
 import random
 import math
+import json
+from optparse import OptionParser
 
 class SportSlot():
     def __init__(self, name, max_student):
@@ -18,6 +20,13 @@ class SportSlotPool():
         print("Generate fake sport slot pool")
         for i in range(nb_slot):
             self.slotpool.append(SportSlot("Sport " + str(i), random.randint(range_min_student,range_max_student)))
+
+    def loadFromJSON(self, filename):
+        with open(filename, 'r', encoding='utf-8') as outfile:
+            print("Load Sport Slot from " + filename)
+            data = json.load(outfile)
+        for s in data["rows"]:
+            self.slotpool.append(SportSlot(str(s["id"]), int(s["places_dispo"])))
 
     def getOptionsList(self):
         options = []
@@ -143,6 +152,26 @@ class StudentPool():
                 listStudent.append(s)
         return listStudent
 
+    def getStudent(self,name):
+        for f in self.students:
+            if f.name == name:
+                return f
+        return None
+
+    def loadFromJSON(self, slotpool, filename):
+        with open(filename, 'r', encoding='utf-8') as outfile:
+            print("Load Student Choices from " + filename)
+            data = json.load(outfile)
+
+        for ds in data["rows"]:
+            s = self.getStudent(ds["student_pk"])
+            if s == None:
+                s = Student(ds["student_pk"])
+                s.choices = [-1] * self.nb_choices
+                self.students.append(s)
+            s.choices[ds["voeu"]-1] = str(ds["sport_pk"])
+
+
     def generateFake(self,slotpool,total=100):
         print("Generate fake student pool")
         options = slotpool.getOptionsList()
@@ -150,6 +179,9 @@ class StudentPool():
             s = Student("Student " + str(i));
             s.choices = random.sample(options, k=self.nb_choices)
             self.students.append(s)
+
+    def show(self):
+        print("Number of students: " + str(len(self.students)))
 
     def stat(self):
         withoutAllocation = []
@@ -165,11 +197,30 @@ class StudentPool():
 
 
 # =====================================
-slotpool = SportSlotPool()
-slotpool.generateFake(150, range_min_student=10, range_max_student=35)
+parser = OptionParser()
+parser.add_option("", "--file-slot", dest="filename_slot",
+                  help="write report to FILE", metavar="FILE")
 
-studentpool = StudentPool(nb_choices=9)
-studentpool.generateFake(slotpool, 3000)
+parser.add_option("", "--file-student", dest="filename_student",
+                  help="write report to FILE", metavar="FILE")
+
+parser.add_option("","--fake", action="store_true", dest="fake")
+
+(options, args) = parser.parse_args()
+
+slotpool = SportSlotPool()
+if options.fake:
+    slotpool.generateFake(150, range_min_student=10, range_max_student=35)
+if options.filename_slot:
+    slotpool.loadFromJSON(options.filename_slot)
+slotpool.show()
+
+studentpool = StudentPool(nb_choices=10)
+if options.fake:
+    studentpool.generateFake(slotpool, 3000)
+if options.filename_student:
+    studentpool.loadFromJSON(slotpool,options.filename_student)
+studentpool.show()
 
 # Sort sport slot allocation order according to invert popularity and number of available place
 slotpool.computeCostSorting(studentpool, show=True)
