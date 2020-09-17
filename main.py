@@ -171,6 +171,17 @@ class StudentPool():
                 self.students.append(s)
             s.choices[ds["voeu"]-1] = str(ds["sport_pk"])
 
+    def export(self, export_file):
+        print("Export to " + export_file)
+        result = []
+        for s in self.students:
+            result.append({
+                    "student_pk" : s.name,
+                    "sport_pk": s.slot
+                    })
+
+        with open(export_file, 'w', encoding='utf-8') as outfile:
+            json.dump(result, outfile)
 
     def generateFake(self,slotpool,total=100):
         print("Generate fake student pool")
@@ -199,10 +210,13 @@ class StudentPool():
 # =====================================
 parser = OptionParser()
 parser.add_option("", "--file-slot", dest="filename_slot",
-                  help="write report to FILE", metavar="FILE")
+                  help="list of available sport slot", metavar="FILE")
 
 parser.add_option("", "--file-student", dest="filename_student",
-                  help="write report to FILE", metavar="FILE")
+                  help="list of student choices", metavar="FILE")
+
+parser.add_option("", "--export", dest="export_file",
+                  help="export file (json)", metavar="FILE")
 
 parser.add_option("","--fake", action="store_true", dest="fake")
 
@@ -226,8 +240,11 @@ studentpool.show()
 slotpool.computeCostSorting(studentpool, show=True)
 
 print("Allocation\n=============")
-slotpool.allocateStudent(studentpool, iter=40, strength=2)
+slotpool.allocateStudent(studentpool, iter=100, strength=8)
 
 print("Statistics\n=============")
 slotpool.stat()
 studentpool.stat()
+
+if options.export_file:
+    studentpool.export(options.export_file)
